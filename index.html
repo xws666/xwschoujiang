@@ -17,9 +17,21 @@
       background: white;
       min-height: 100vh;
       padding: 20px;
-      padding-bottom: 80px;
+      padding-bottom: 60px;
       /* 为底部固定元素预留空间 */
       color: #333;
+    }
+
+    /* 满屏斜向水印层（内容为登录用户名） */
+    #watermarkLayer {
+      position: fixed;
+      inset: 0;
+      z-index: 900; /* 低于导航栏(1000)/底部(999)，高于内容 */
+      pointer-events: none;
+      background-repeat: repeat;
+      background-position: 0 0;
+      /* 平铺密度由 JS 配置动态设置 background-size */
+      display: none; /* 未登录时不显示 */
     }
 
     .container {
@@ -207,8 +219,120 @@
 
     /* 记录列表 */
     .records-section {
-      max-height: 400px;
+      max-height: 450px;
       overflow-y: auto;
+    }
+
+    /* 留言 */
+    .message-panel {
+      height: 450px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .message-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 12px;
+      background: #fafafa;
+    }
+
+    .message-card {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      padding: 5px 8px;
+      /* margin-bottom: 10px; */
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .message-meta {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+
+    .message-actions {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      display: flex;
+      gap: 10px;
+      font-size: 12px;
+      align-items: center;
+    }
+
+    .message-action-btn {
+      border: none;
+      background: transparent;
+      color: #667eea;
+      cursor: pointer;
+      padding: 2px 4px;
+    }
+
+    .message-action-btn.danger {
+      color: #d33;
+    }
+
+    .message-user {
+      font-weight: 800;
+      color: #111;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .message-time {
+      font-size: 12px;
+      color: #999;
+      white-space: nowrap;
+    }
+
+    .message-text {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message-composer {
+      display: flex;
+      gap: 10px;
+      padding: 10px 12px;
+      border-top: 1px solid #eee;
+      background: #fff;
+    }
+
+    .message-input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .message-send {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 6px;
+      background: #667eea;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .message-send:disabled {
+      background: #ccc;
+      cursor: not-allowed;
     }
 
     .record-item {
@@ -543,6 +667,9 @@
 </head>
 
 <body>
+  <!-- 满屏水印（登录后显示，内容为用户名） -->
+  <div id="watermarkLayer" aria-hidden="true"></div>
+
   <div class="container">
     <!-- 公告弹窗（每日首次进入弹出，可勾选当日不再弹出） -->
     <div id="noticeModal" class="notice-modal">
@@ -609,6 +736,19 @@
         </div>
       </div>
 
+      <!-- 留言编辑弹窗（仅“小稳神”可见操作入口） -->
+      <div id="messageEditModal" class="password-modal" onclick="closeMessageEditModal()">
+        <div class="password-modal-content" onclick="event.stopPropagation()">
+          <h3>编辑留言</h3>
+          <input type="hidden" id="messageEditId" />
+          <textarea id="messageEditText" style="width:100%;min-height:120px;resize:vertical;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:14px;line-height:1.5;margin-bottom:15px;"></textarea>
+          <div class="modal-buttons">
+            <button class="confirm-btn" onclick="saveMessageEdit()">保存</button>
+            <button class="cancel-btn" onclick="closeMessageEditModal()">取消</button>
+          </div>
+        </div>
+      </div>
+
       <!-- 奖品展示 -->
       <div class="prizes-section">
         <div class="prizes-grid" id="prizesGrid">
@@ -633,15 +773,27 @@
       <div class="tabs">
         <button class="tab active" onclick="switchTab('my')">我的记录</button>
         <button class="tab" onclick="switchTab('all')">他人记录</button>
+        <button class="tab" onclick="switchTab('msg')">留言</button>
       </div>
 
       <!-- 记录列表 -->
-      <div class="records-section">
+      <div id="recordsPanel" class="records-section">
         <div id="myRecords" class="records-list">
           <div class="loading">加载中...</div>
         </div>
         <div id="allRecords" class="records-list hidden">
           <div class="loading">加载中...</div>
+        </div>
+      </div>
+
+      <!-- 留言面板 -->
+      <div id="messagePanel" class="message-panel hidden">
+        <div id="messageList" class="message-list">
+          <div class="loading">加载中...</div>
+        </div>
+        <div class="message-composer">
+          <input id="messageInput" class="message-input" type="text" placeholder="请输入留言…" maxlength="200" />
+          <button id="messageSendBtn" class="message-send" onclick="sendMessage()">发送</button>
         </div>
       </div>
     </div>
@@ -698,6 +850,7 @@
       const savedDeveloperMode = localStorage.getItem('isDeveloperMode');
       if (savedUsername) {
         currentUsername = savedUsername;
+        updateWatermark(currentUsername);
         if (savedDeveloperMode === 'true') {
           isDeveloperMode = true;
         }
@@ -706,6 +859,80 @@
         loadRecords('my');
       }
     };
+
+    // ============================
+    // 水印配置（可通过代码自由修改）
+    // ============================
+    // 说明：
+    // - fontSize: 字体大小(px)
+    // - gapX/gapY: 水印水平/垂直间距(px)，越小越密
+    // - angleDeg: 旋转角度(度)，例如 -30
+    // - color: 颜色(r,g,b)
+    // - alpha: 透明度(0~1)
+    const WATERMARK_CONFIG = {
+      fontSize: 14,
+      gapX: 180,
+      gapY: 200,
+      angleDeg: -30,
+      color: { r: 0, g: 0, b: 0 },
+      alpha: 0.18,
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif",
+    };
+
+    // 可手动调用：修改 WATERMARK_CONFIG 后执行 refreshWatermark()
+    function refreshWatermark() {
+      updateWatermark(currentUsername);
+    }
+
+    // 获取本地日期 YYYYMMDD（避免 toISOString 的时区跨天问题）
+    function getTodayCompactLocal() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}${m}${day}`+"@StevenSun";
+    }
+
+    // 生成并更新水印（用 Canvas 生成可重复背景）
+    function updateWatermark(text) {
+      const layer = document.getElementById('watermarkLayer');
+      if (!layer) return;
+      const t = (text || '').trim();
+      if (!t) {
+        layer.style.backgroundImage = '';
+        layer.style.backgroundSize = '';
+        layer.style.display = 'none';
+        return;
+      }
+
+      // 水印内容：用户名 + 今日日期（YYYYMMDD）
+      const watermarkText = `${t}${getTodayCompactLocal()}`;
+
+      const canvas = document.createElement('canvas');
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      const w = Math.max(120, WATERMARK_CONFIG.gapX) * dpr;
+      const h = Math.max(90, WATERMARK_CONFIG.gapY) * dpr;
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.save();
+      ctx.translate(w / 2, h / 2);
+      ctx.rotate((WATERMARK_CONFIG.angleDeg * Math.PI) / 180);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const { r, g, b } = WATERMARK_CONFIG.color;
+      ctx.fillStyle = `rgba(${r},${g},${b},${WATERMARK_CONFIG.alpha})`;
+      ctx.font = `${WATERMARK_CONFIG.fontSize * dpr}px ${WATERMARK_CONFIG.fontFamily}`;
+      ctx.fillText(watermarkText, 0, 0);
+      ctx.restore();
+
+      layer.style.backgroundImage = `url(${canvas.toDataURL('image/png')})`;
+      layer.style.backgroundSize = `${WATERMARK_CONFIG.gapX}px ${WATERMARK_CONFIG.gapY}px`;
+      layer.style.display = 'block';
+    }
 
     // ============================
     // 公告弹窗（每日一次）
@@ -772,6 +999,7 @@
 
       currentUsername = username;
       localStorage.setItem('username', username);
+      updateWatermark(currentUsername);
       showMainSection();
       await loadTodayDrawCount();
       await loadRecords('my');
@@ -1074,6 +1302,19 @@
       event.target.classList.add('active');
 
       // 显示对应的记录列表
+      const recordsPanel = document.getElementById('recordsPanel');
+      const messagePanel = document.getElementById('messagePanel');
+
+      if (tab === 'msg') {
+        if (recordsPanel) recordsPanel.classList.add('hidden');
+        if (messagePanel) messagePanel.classList.remove('hidden');
+        loadMessages();
+        return;
+      }
+
+      if (messagePanel) messagePanel.classList.add('hidden');
+      if (recordsPanel) recordsPanel.classList.remove('hidden');
+
       if (tab === 'my') {
         document.getElementById('myRecords').classList.remove('hidden');
         document.getElementById('allRecords').classList.add('hidden');
@@ -1083,6 +1324,167 @@
         document.getElementById('allRecords').classList.remove('hidden');
         loadRecords('all');
       }
+    }
+
+    // ==============
+    // 留言（所有人可见）
+    // ==============
+    async function loadMessages() {
+      const list = document.getElementById('messageList');
+      if (!list) return;
+      list.innerHTML = '<div class="loading">加载中...</div>';
+
+      try {
+        const Message = AV.Object.extend('Message');
+        const query = new AV.Query(Message);
+        query.descending('createdAt');
+        query.limit(100);
+        const results = await query.find();
+
+        if (!results || results.length === 0) {
+          list.innerHTML = '<div class="empty-records">暂无留言</div>';
+          return;
+        }
+
+        list.innerHTML = '';
+        results.forEach((m) => {
+          const username = m.get('username') || '';
+          const content = m.get('content') || '';
+          const timeStr = formatDateTime(new Date(m.createdAt));
+          const id = m.id;
+          const isAdmin = currentUsername === '小稳神';
+
+          const card = document.createElement('div');
+          card.className = 'message-card';
+          card.innerHTML = `
+            ${isAdmin ? `
+              <div class="message-actions">
+                <button class="message-action-btn" onclick="openMessageEdit('${id}')">编辑</button>
+                <button class="message-action-btn danger" onclick="deleteMessage('${id}')">删除</button>
+              </div>
+            ` : ''}
+            <div class="message-meta">
+              <span class="message-user">${escapeHtml(username)}</span>
+              <span class="message-time">${timeStr}</span>
+            </div>
+            <div class="message-text">${escapeHtml(content)}</div>
+          `;
+          list.appendChild(card);
+        });
+      } catch (error) {
+        console.error('加载留言失败:', error);
+        list.innerHTML = '<div class="empty-records">加载失败，请稍后重试</div>';
+      }
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const btn = document.getElementById('messageSendBtn');
+      if (!input || !btn) return;
+
+      const content = (input.value || '').trim();
+      if (!content) return;
+
+      btn.disabled = true;
+      btn.textContent = '发送中...';
+
+      try {
+        const Message = AV.Object.extend('Message');
+        const msg = new Message();
+        msg.set('username', currentUsername);
+        msg.set('content', content);
+        await msg.save();
+
+        input.value = '';
+        await loadMessages();
+      } catch (error) {
+        console.error('发送留言失败:', error);
+        alert('发送失败，请检查网络或权限设置');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '发送';
+      }
+    }
+
+    function openMessageEdit(id) {
+      if (currentUsername !== '小稳神') return;
+      const modal = document.getElementById('messageEditModal');
+      const idEl = document.getElementById('messageEditId');
+      const textEl = document.getElementById('messageEditText');
+      if (!modal || !idEl || !textEl) return;
+
+      // 从当前列表中取出原文（避免额外请求）
+      const card = Array.from(document.querySelectorAll('.message-card')).find(c => c.querySelector('.message-actions button')?.getAttribute('onclick')?.includes(id));
+      let currentText = '';
+      if (card) {
+        const textNode = card.querySelector('.message-text');
+        currentText = textNode ? textNode.textContent : '';
+      }
+
+      idEl.value = id;
+      textEl.value = currentText;
+      modal.classList.add('show');
+      setTimeout(() => textEl.focus(), 0);
+    }
+
+    function closeMessageEditModal() {
+      const modal = document.getElementById('messageEditModal');
+      const idEl = document.getElementById('messageEditId');
+      const textEl = document.getElementById('messageEditText');
+      if (modal) modal.classList.remove('show');
+      if (idEl) idEl.value = '';
+      if (textEl) textEl.value = '';
+    }
+
+    async function saveMessageEdit() {
+      if (currentUsername !== '小稳神') return;
+      const idEl = document.getElementById('messageEditId');
+      const textEl = document.getElementById('messageEditText');
+      if (!idEl || !textEl) return;
+      const id = (idEl.value || '').trim();
+      const newContent = (textEl.value || '').trim();
+      if (!id) return;
+      if (!newContent) {
+        alert('内容不能为空');
+        return;
+      }
+
+      try {
+        const Message = AV.Object.extend('Message');
+        const msg = AV.Object.createWithoutData('Message', id);
+        msg.set('content', newContent); // 只更新内容，其他字段不变
+        await msg.save();
+        closeMessageEditModal();
+        await loadMessages();
+      } catch (error) {
+        console.error('编辑留言失败:', error);
+        alert('编辑失败，请检查网络或权限设置');
+      }
+    }
+
+    async function deleteMessage(id) {
+      if (currentUsername !== '小稳神') return;
+      if (!id) return;
+      if (!confirm('确定要删除这条留言吗？')) return;
+
+      try {
+        const msg = AV.Object.createWithoutData('Message', id);
+        await msg.destroy();
+        await loadMessages();
+      } catch (error) {
+        console.error('删除留言失败:', error);
+        alert('删除失败，请检查网络或权限设置');
+      }
+    }
+
+    // 简单转义，避免留言插入 HTML
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('\"', '&quot;')
+        .replaceAll("'", '&#39;');
     }
 
     // 加载记录
