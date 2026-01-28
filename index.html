@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>小稳神抽奖模拟器</title>
+  <title>小稳神-抽奖模拟器</title>
   <style>
     * {
       margin: 0;
@@ -26,12 +26,14 @@
     #watermarkLayer {
       position: fixed;
       inset: 0;
-      z-index: 900; /* 低于导航栏(1000)/底部(999)，高于内容 */
+      z-index: 900;
+      /* 低于导航栏(1000)/底部(999)，高于内容 */
       pointer-events: none;
       background-repeat: repeat;
       background-position: 0 0;
       /* 平铺密度由 JS 配置动态设置 background-size */
-      display: none; /* 未登录时不显示 */
+      display: none;
+      /* 未登录时不显示 */
     }
 
     .container {
@@ -139,10 +141,11 @@
     /* 抽奖按钮区域 */
     .draw-section {
       position: relative;
-      margin-bottom: 10px;
+      /* margin-bottom: 10px; */
     }
 
     .probability-link {
+      padding: 5px;
       position: absolute;
       left: 0;
       top: -25px;
@@ -156,8 +159,21 @@
       color: #5568d3;
     }
 
+    /* 抽奖次数（按钮上方右侧） */
+    .draw-info-top {
+      padding: 5px;
+      position: absolute;
+      right: 0;
+      top: -25px;
+      font-size: 14px;
+      color: #666;
+      white-space: nowrap;
+      user-select: none;
+    }
+
     /* 抽奖按钮 */
     .draw-button {
+      margin: 0px 0px 10px 0px;
       width: 100%;
       padding: 10px 16px;
       background: #667eea;
@@ -326,8 +342,13 @@
     }
 
     @keyframes messageTickerScroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-100%); }
+      0% {
+        transform: translateX(0);
+      }
+
+      100% {
+        transform: translateX(-100%);
+      }
     }
 
     .message-composer {
@@ -532,10 +553,11 @@
 
     .password-modal-content {
       background: white;
-      padding: 30px;
+      padding: 20px;
       border-radius: 8px;
       width: 90%;
-      max-width: 400px;
+      max-width: 600px;
+      /* height: 70%; */
     }
 
     .password-modal-content h3 {
@@ -720,7 +742,8 @@
     <!-- 用户名输入区域 -->
     <div id="usernameSection" class="username-section">
       <h1>请设置一个用户名</h1>
-      <input type="text" id="usernameInput" placeholder="请输入您的用户名（长度1~6个汉字/字符）" maxlength="6" oninput="limitUsernameLength()">
+      <input type="text" id="usernameInput" placeholder="请输入您的用户名（长度1~6个汉字/字符）" maxlength="6"
+        oninput="limitUsernameLength()">
       <button onclick="saveUsername()">登录</button>
       <div class="tip">注意：登陆后无法退出，且无法修改用户名。</div>
     </div>
@@ -770,7 +793,8 @@
         <div class="password-modal-content" onclick="event.stopPropagation()">
           <h3>编辑留言</h3>
           <input type="hidden" id="messageEditId" />
-          <textarea id="messageEditText" style="width:100%;min-height:120px;resize:vertical;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:14px;line-height:1.5;margin-bottom:15px;"></textarea>
+          <textarea id="messageEditText"
+            style="width:100%;min-height:120px;resize:vertical;padding:12px;border:1px solid #ddd;border-radius:6px;font-size:14px;line-height:1.5;margin-bottom:15px;"></textarea>
           <div class="modal-buttons">
             <button class="confirm-btn" onclick="saveMessageEdit()">保存</button>
             <button class="cancel-btn" onclick="closeMessageEditModal()">取消</button>
@@ -784,19 +808,21 @@
           <div class="prize-item">520元</div>
           <div class="prize-item">100元</div>
           <div class="prize-item">25元</div>
+          <div class="prize-item">10元</div>
+          <div class="prize-item">5.2元</div>
           <div class="prize-item">1元</div>
           <div class="prize-item">0.1元</div>
           <div class="prize-item">0.01元</div>
-          <div class="prize-item" style="grid-column: 2;">谢谢参与</div>
+          <div class="prize-item">谢谢参与</div>
         </div>
       </div>
 
       <!-- 抽奖按钮区域 -->
       <div class="draw-section">
         <div class="probability-link" onclick="showProbabilityModal()">查看概率</div>
+        <div class="draw-info-top" id="drawInfo">今日剩余抽奖次数: <span id="remainingCount">5</span> 次</div>
         <button id="drawButton" class="draw-button" onclick="drawPrize()">抽奖</button>
       </div>
-      <div class="draw-info" id="drawInfo">今日剩余抽奖次数: <span id="remainingCount">5</span> 次</div>
 
       <!-- 记录选项卡 -->
       <div class="tabs">
@@ -869,8 +895,10 @@
     const PRIZES = [
       { name: '520元', probability: 0.00000000000008 / 100, displayProbability: "0.0008%" },
       { name: '100元', probability: 0.0000000008 / 100, displayProbability: "0.008%" },
-      { name: '25元', probability: 0.00000008 / 100, displayProbability: "0.08%" },
-      { name: '1元', probability: 0.8 / 100, displayProbability: "0.8%" },
+      { name: '52元', probability: 0.00000008 / 100, displayProbability: "0.08%" },
+      { name: '10元', probability: 0.008 / 100, displayProbability: "0.1%" },
+      { name: '5.2元', probability: 0.08 / 100, displayProbability: "0.8%" },
+      { name: '1元', probability: 0.8 / 100, displayProbability: "1.8%" },
       { name: '0.1元', probability: 8.8 / 100, displayProbability: "8.8%" },
       { name: '0.01元', probability: 38 / 100, displayProbability: "38%" },
       { name: '谢谢参与', probability: 59.12 / 100, displayProbability: "59.12%" }
@@ -1028,7 +1056,7 @@
         return;
       }
       if (username.length > 6) {
-        alert('用户名最多6个字');        return;
+        alert('用户名最多6个字'); return;
       }
 
       currentUsername = username;
