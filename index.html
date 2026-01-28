@@ -909,7 +909,7 @@
       gapY: 200,
       angleDeg: -30,
       color: { r: 0, g: 0, b: 0 },
-      alpha: 0.18,
+      alpha: 0.12,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif",
     };
 
@@ -924,7 +924,7 @@
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
-      return `${y}${m}${day}`+"@StevenSun";
+      return `${y}${m}${day}`;
     }
 
     // 生成并更新水印（用 Canvas 生成可重复背景）
