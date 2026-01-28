@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>小稳神-抽奖模拟器</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: white;
+      min-height: 100vh;
+      padding: 20px;
+      padding-bottom: 80px;
+      /* 为底部固定元素预留空间 */
+      color: #333;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 0;
+    }
+
+    h1 {
+      text-align: center;
+      color: #000000;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+
+    /* 用户名输入区域 */
+    .username-section {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 400px;
+      padding: 0;
+    }
+
+    .username-section input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      margin-bottom: 10px;
+      background: white;
+    }
+
+    .username-section button {
+      width: 100%;
+      padding: 12px;
+      background: #3b93ff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .username-section button:hover {
+      background: #5568d3;
+    }
+
+    .username-section button:active {
+      transform: scale(0.98);
+    }
+
+    .username-section .tip {
+      text-align: center;
+      margin-top: 15px;
+      color: #666666;
+      font-size: 14px;
+    }
+
+    /* 奖品展示区域 */
+    .prizes-section {
+      margin-bottom: 20px;
+    }
+
+    .prizes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .prize-item {
+      background: #f5f5f5;
+      padding: 12px;
+      border-radius: 4px;
+      text-align: center;
+      color: #333;
+      font-weight: bold;
+      border: 1px solid #e0e0e0;
+    }
+
+    .prize-item.highlight {
+      background: #fff3cd;
+      border-color: #ffc107;
+      transform: scale(1.05);
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1.05);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
+    /* 抽奖按钮区域 */
+    .draw-section {
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .probability-link {
+      position: absolute;
+      left: 0;
+      top: -25px;
+      font-size: 14px;
+      color: #667eea;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .probability-link:hover {
+      color: #5568d3;
+    }
+
+    /* 抽奖按钮 */
+    .draw-button {
+      width: 100%;
+      padding: 10px 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .draw-button:hover:not(:disabled) {
+      background: #5568d3;
+    }
+
+    .draw-button:active:not(:disabled) {
+      background: #4a5bc4;
+    }
+
+    .draw-button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .draw-info {
+      text-align: center;
+      margin-top: 10px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    /* 记录选项卡 */
+    .tabs {
+      display: flex;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #eee;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      background: none;
+      border: none;
+      font-size: 16px;
+      color: #666;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+      font-weight: bold;
+    }
+
+    /* 记录列表 */
+    .records-section {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .record-item {
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #f9f9f9;
+      border-radius: 4px;
+      border-left: 3px solid #667eea;
+    }
+
+    .record-item .record-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 5px;
+    }
+
+    .record-item .time {
+      font-size: 14px;
+      color: #999;
+      white-space: nowrap;
+    }
+
+    .record-item .prize {
+      font-size: 14px;
+      font-weight: bold;
+      color: #667eea;
+      flex: 1;
+    }
+
+    .record-item .username {
+      font-size: 14px;
+      color: #000;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    .empty-records {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    /* 加载提示 */
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+
+    /* 底部版权信息 */
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      text-align: center;
+      padding: 15px 20px;
+      background: white;
+      border-top: 1px solid #e0e0e0;
+      z-index: 999;
+    }
+
+    .footer .copyright {
+      font-size: 14px;
+      color: #999;
+    }
+
+    /* 导航栏 */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .navbar .title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .navbar .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .navbar .username {
+      font-size: 16px;
+      color: #667eea;
+    }
+
+    .navbar .switch-btn {
+      padding: 5px 10px;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #666;
+      cursor: pointer;
+    }
+
+    .navbar .switch-btn:hover {
+      background: #e0e0e0;
+    }
+
+    /* 下拉弹窗 */
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 10px;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      min-width: 200px;
+      z-index: 1001;
+      display: none;
+    }
+
+    .dropdown-menu.show {
+      display: block;
+    }
+
+    .dropdown-menu .menu-item {
+      padding: 12px 20px;
+      cursor: pointer;
+      border-bottom: 1px solid #f5f5f5;
+      transition: background 0.2s;
+    }
+
+    .dropdown-menu .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .dropdown-menu .menu-item:hover {
+      background: #f5f5f5;
+    }
+
+    /* 密码输入弹窗 */
+    .password-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+
+    .password-modal.show {
+      display: flex;
+    }
+
+    .password-modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    .password-modal-content h3 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .password-modal-content input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+
+    .password-modal-content .modal-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .password-modal-content .modal-buttons button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .password-modal-content .modal-buttons .confirm-btn {
+      background: #667eea;
+      color: white;
+    }
+
+    .password-modal-content .modal-buttons .cancel-btn {
+      background: #f5f5f5;
+      color: #666;
+    }
+
+    /* 公告弹窗 */
+    .notice-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 3000;
+      padding: 16px;
+    }
+
+    .notice-modal.show {
+      display: flex;
+    }
+
+    .notice-modal-content {
+      background: #fff;
+      width: 100%;
+      max-width: 520px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    }
+
+    .notice-modal-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .notice-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .notice-modal-body {
+      padding: 14px 16px;
+      max-height: 60vh;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.55;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .notice-modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-top: 1px solid #eee;
+      background: #fff;
+    }
+
+    .notice-skip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #555;
+      font-size: 14px;
+      user-select: none;
+    }
+
+    .notice-confirm-btn {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 6px;
+      background: #667eea;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .notice-confirm-btn:active {
+      background: #5568d3;
+    }
+
+    /* 概率列表 */
+    .probability-list {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+
+    .probability-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .probability-item:last-child {
+      border-bottom: none;
+    }
+
+    .probability-item .prize-name {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .probability-item .prize-probability {
+      color: #667eea;
+      font-weight: bold;
+    }
+
+    /* 隐藏类 */
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- 公告弹窗（每日首次进入弹出，可勾选当日不再弹出） -->
+    <div id="noticeModal" class="notice-modal">
+      <div class="notice-modal-content" role="dialog" aria-modal="true" aria-labelledby="noticeTitle">
+        <div class="notice-modal-header">
+          <div id="noticeTitle" class="notice-title">公告</div>
+        </div>
+        <div id="noticeContent" class="notice-modal-body"></div>
+        <div class="notice-modal-footer">
+          <label class="notice-skip">
+            <input id="noticeSkipToday" type="checkbox" />
+            今日不再弹出
+          </label>
+          <button class="notice-confirm-btn" onclick="agreeNotice()">同意并继续</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 用户名输入区域 -->
+    <div id="usernameSection" class="username-section">
+      <h1>请设置一个用户名</h1>
+      <input type="text" id="usernameInput" placeholder="请输入您的用户名（长度1~6个汉字/字符）" maxlength="6" oninput="limitUsernameLength()">
+      <button onclick="saveUsername()">登录</button>
+      <div class="tip">注意：登陆后无法退出，且无法修改用户名。</div>
+    </div>
+
+    <!-- 主抽奖区域 -->
+    <div id="mainSection" class="hidden">
+      <!-- 导航栏 -->
+      <div class="navbar">
+        <div class="title">抽奖</div>
+        <div class="user-info" onclick="toggleDropdown()">
+          <span class="username" id="displayUsername"></span>
+          <span class="switch-btn">切换</span>
+        </div>
+        <!-- 下拉菜单 -->
+        <div id="dropdownMenu" class="dropdown-menu">
+          <div id="developerMenuItem" class="menu-item" onclick="openDeveloperMode()">开发者人员模式</div>
+          <div id="exitDeveloperMenuItem" class="menu-item hidden" onclick="exitDeveloperMode()">返回用户</div>
+        </div>
+      </div>
+
+      <!-- 密码输入弹窗 -->
+      <div id="passwordModal" class="password-modal" onclick="closePasswordModal()">
+        <div class="password-modal-content" onclick="event.stopPropagation()">
+          <h3>请输入开发者密码</h3>
+          <input type="password" id="passwordInput" placeholder="请输入密码" maxlength="20"
+            onkeypress="if(event.key==='Enter') checkPassword()">
+          <div class="modal-buttons">
+            <button class="confirm-btn" onclick="checkPassword()">确认</button>
+            <button class="cancel-btn" onclick="closePasswordModal()">取消</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 概率展示弹窗 -->
+      <div id="probabilityModal" class="password-modal" onclick="closeProbabilityModal()">
+        <div class="password-modal-content" onclick="event.stopPropagation()">
+          <h3>奖项概率（随时调整请留意）</h3>
+          <div id="probabilityList" class="probability-list"></div>
+          <div class="modal-buttons">
+            <button class="cancel-btn" onclick="closeProbabilityModal()" style="width: 100%;">关闭</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 奖品展示 -->
+      <div class="prizes-section">
+        <div class="prizes-grid" id="prizesGrid">
+          <div class="prize-item">520元</div>
+          <div class="prize-item">100元</div>
+          <div class="prize-item">25元</div>
+          <div class="prize-item">1元</div>
+          <div class="prize-item">0.1元</div>
+          <div class="prize-item">0.01元</div>
+          <div class="prize-item" style="grid-column: 2;">谢谢参与</div>
+        </div>
+      </div>
+
+      <!-- 抽奖按钮区域 -->
+      <div class="draw-section">
+        <div class="probability-link" onclick="showProbabilityModal()">查看概率</div>
+        <button id="drawButton" class="draw-button" onclick="drawPrize()">抽奖</button>
+      </div>
+      <div class="draw-info" id="drawInfo">今日剩余抽奖次数: <span id="remainingCount">5</span> 次</div>
+
+      <!-- 记录选项卡 -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('my')">我的记录</button>
+        <button class="tab" onclick="switchTab('all')">他人记录</button>
+      </div>
+
+      <!-- 记录列表 -->
+      <div class="records-section">
+        <div id="myRecords" class="records-list">
+          <div class="loading">加载中...</div>
+        </div>
+        <div id="allRecords" class="records-list hidden">
+          <div class="loading">加载中...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 版权信息 -->
+  <div class="footer">
+    <div class="copyright">任何问题联系小稳神 3253952854@qq.com</div>
+  </div>
+
+  <!-- LeanCloud SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.2/dist/av-min.js"></script>
+
+  <script>
+    // LeanCloud 配置 - 需要替换为您的实际 AppID 和 AppKey
+    const APP_ID = 'Em8tisJ7TQ49O0TapPHhuCLy-gzGzoHsz';
+    const APP_KEY = 'C9q5IAIPSwhId23glTf8g8eg';
+
+    // 初始化 LeanCloud
+    try {
+      AV.init({
+        appId: APP_ID,
+        appKey: APP_KEY,
+        serverURL: 'https://em8tisj7.lc-cn-n1-shared.com' // 国内版需要设置此参数
+      });
+      console.log('LeanCloud 初始化成功');
+    } catch (error) {
+      console.error('LeanCloud 初始化失败:', error);
+      alert('LeanCloud 配置错误，请检查 AppID 和 AppKey');
+    }
+
+    // 全局变量
+    let currentUsername = '';
+    let todayDrawCount = 0;
+    const MAX_DAILY_DRAWS = 5;
+    let isDeveloperMode = false;
+    const DEVELOPER_PASSWORD = '475397';
+
+    const PRIZES = [
+      { name: '520元', probability: 0.00000000000008 / 100, displayProbability: "0.0008%" },
+      { name: '100元', probability: 0.0000000008 / 100, displayProbability: "0.008%" },
+      { name: '25元', probability: 0.00000008 / 100, displayProbability: "0.08%" },
+      { name: '1元', probability: 0.8 / 100, displayProbability: "0.8%" },
+      { name: '0.1元', probability: 8.8 / 100, displayProbability: "8.8%" },
+      { name: '0.01元', probability: 38 / 100, displayProbability: "38%" },
+      { name: '谢谢参与', probability: 59.12 / 100, displayProbability: "59.12%" }
+    ];
+
+
+    // 页面加载时检查用户名和开发者模式
+    window.onload = function () {
+      maybeShowNotice();
+      const savedUsername = localStorage.getItem('username');
+      const savedDeveloperMode = localStorage.getItem('isDeveloperMode');
+      if (savedUsername) {
+        currentUsername = savedUsername;
+        if (savedDeveloperMode === 'true') {
+          isDeveloperMode = true;
+        }
+        showMainSection();
+        loadTodayDrawCount();
+        loadRecords('my');
+      }
+    };
+
+    // ============================
+    // 公告弹窗（每日一次）
+    // ============================
+    const NOTICE_SKIP_KEY = 'notice_skip_date_v1';
+
+    function getNoticeText() {
+      return `Beta-1.0.1公告
+1.小稳神抽奖网页端外部测试版上线。
+
+使用须知：
+1.切勿造假，发现后将封禁测试账号。测试用户资格发放有限，仅前三天可参与兑奖。请在当日24：00前兑奖。
+2.本APP承诺不获取、不收集、不存储用户隐私信息，也不会向任何第三方提供或出售任何用户数据。
+3.未经许可，禁止对本应用进行反编译、破解、篡改或进行任何形式的逆向工程。
+4.抽奖为概率性活动，开奖结果以系统公示结果为准。
+5.为保障公平性，系统可能对异常行为进行风控校验并取消资格。
+6.本活动/抽奖由本APP开发者主办并负责解释与执行，如发现安全漏洞或异常行为反馈至3253952854@qq.com，我们将及时处理。
+7.本条款未尽事宜以最新《用户协议》与《服务规则》为准，并适用相关法律法规。
+8.使用则代表您以仔细阅读并同意!`;
+    }
+
+    function maybeShowNotice() {
+      const modal = document.getElementById('noticeModal');
+      const content = document.getElementById('noticeContent');
+      if (!modal || !content) return;
+
+      const today = getTodayString();
+      const skipped = localStorage.getItem(NOTICE_SKIP_KEY);
+      if (skipped === today) return;
+
+      content.textContent = getNoticeText();
+      modal.classList.add('show');
+    }
+
+    function agreeNotice() {
+      const modal = document.getElementById('noticeModal');
+      const checkbox = document.getElementById('noticeSkipToday');
+      if (!modal) return;
+
+      if (checkbox && checkbox.checked) {
+        localStorage.setItem(NOTICE_SKIP_KEY, getTodayString());
+      }
+      modal.classList.remove('show');
+    }
+
+    function limitUsernameLength() {
+      const input = document.getElementById('usernameInput');
+      if (!input) return;
+      const v = input.value || '';
+      if (v.length > 6) input.value = v.slice(0, 6);
+    }
+
+    // 保存用户名
+    async function saveUsername() {
+      limitUsernameLength();
+      const username = document.getElementById('usernameInput').value.trim();
+      if (!username) {
+        alert('请输入用户名');
+        return;
+      }
+      if (username.length > 6) {
+        alert('用户名最多6个字');        return;
+      }
+
+      currentUsername = username;
+      localStorage.setItem('username', username);
+      showMainSection();
+      await loadTodayDrawCount();
+      await loadRecords('my');
+    }
+
+    // 显示主抽奖区域
+    function showMainSection() {
+      document.getElementById('usernameSection').classList.add('hidden');
+      document.getElementById('mainSection').classList.remove('hidden');
+      updateNavbarDisplay();
+      // 添加导航栏的顶部间距
+      document.getElementById('mainSection').style.paddingTop = '60px';
+    }
+
+    // 更新导航栏显示
+    function updateNavbarDisplay() {
+      const displayUsername = document.getElementById('displayUsername');
+      const developerMenuItem = document.getElementById('developerMenuItem');
+      const exitDeveloperMenuItem = document.getElementById('exitDeveloperMenuItem');
+
+      if (isDeveloperMode) {
+        displayUsername.textContent = '开发者';
+        developerMenuItem.classList.add('hidden');
+        exitDeveloperMenuItem.classList.remove('hidden');
+      } else {
+        displayUsername.textContent = currentUsername;
+        developerMenuItem.classList.remove('hidden');
+        exitDeveloperMenuItem.classList.add('hidden');
+      }
+    }
+
+    // 加载今日抽奖次数
+    async function loadTodayDrawCount() {
+      try {
+        const drawButton = document.getElementById('drawButton');
+        if (isDeveloperMode) {
+          // 开发者模式：无限次抽奖
+          document.getElementById('remainingCount').textContent = '∞';
+          drawButton.disabled = false;
+          document.getElementById('drawInfo').textContent = '开发者模式：无限次抽奖';
+          return;
+        }
+
+        const today = getTodayString();
+        const DrawRecord = AV.Object.extend('DrawRecord');
+        const query = new AV.Query(DrawRecord);
+        query.equalTo('username', currentUsername);
+        query.equalTo('drawDate', today);
+        query.notEqualTo('isDeveloper', true); // 不计算开发者模式的记录
+        const results = await query.count();
+        todayDrawCount = results;
+
+        const remaining = MAX_DAILY_DRAWS - todayDrawCount;
+        document.getElementById('remainingCount').textContent = remaining;
+        document.getElementById('drawButton').disabled = remaining <= 0;
+        document.getElementById('drawInfo').textContent = `今日剩余抽奖次数: ${remaining} 次`;
+      } catch (error) {
+        console.error('加载抽奖次数失败:', error);
+      }
+    }
+
+    // 获取今天的日期字符串（YYYY-MM-DD）
+    function getTodayString() {
+      const today = new Date();
+      return today.toISOString().split('T')[0];
+    }
+
+    // 格式化时间（年-月-日 时:分:秒）
+    function formatDateTime(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+
+    // 抽奖逻辑
+    async function drawPrize() {
+      if (!isDeveloperMode && todayDrawCount >= MAX_DAILY_DRAWS) {
+        alert('今日抽奖次数已用完，请明天再来！');
+        return;
+      }
+
+      // 禁用按钮
+      const drawButton = document.getElementById('drawButton');
+      drawButton.disabled = true;
+      drawButton.textContent = '抽奖中...';
+
+      const prizeItems = document.querySelectorAll('.prize-item');
+
+      if (isDeveloperMode) {
+        // 开发者模式：直接显示结果，无动画
+        const prize = calculatePrize();
+
+        // 高亮显示中奖项
+        prizeItems.forEach((item) => {
+          item.classList.remove('highlight');
+          if (item.textContent === prize.name) {
+            item.classList.add('highlight');
+          }
+        });
+
+        // 保存记录到 LeanCloud
+        const saveSuccess = await saveDrawRecord(prize.name);
+
+        // 开发者模式：立即恢复按钮可用
+        drawButton.disabled = false;
+        drawButton.textContent = '抽奖';
+
+        // 如果保存成功，重新加载记录
+        if (saveSuccess) {
+          await loadRecords('my');
+        }
+
+        // 短暂显示高亮后清除
+        setTimeout(() => {
+          prizeItems.forEach(item => item.classList.remove('highlight'));
+        }, 500);
+      } else {
+        // 用户模式：有动画，时间缩短
+        let currentIndex = 0;
+        const animationInterval = setInterval(() => {
+          prizeItems.forEach(item => item.classList.remove('highlight'));
+          prizeItems[currentIndex].classList.add('highlight');
+          currentIndex = (currentIndex + 1) % prizeItems.length;
+        }, 100);
+
+        // 0.8秒后停止动画并确定奖项
+        setTimeout(async () => {
+          clearInterval(animationInterval);
+
+          try {
+            // 根据概率计算奖项
+            const prize = calculatePrize();
+
+            // 高亮显示中奖项
+            prizeItems.forEach((item) => {
+              item.classList.remove('highlight');
+              if (item.textContent === prize.name) {
+                item.classList.add('highlight');
+              }
+            });
+
+            // 保存记录到 LeanCloud
+            let saveSuccess = false;
+            try {
+              saveSuccess = await saveDrawRecord(prize.name);
+            } catch (error) {
+              console.error('保存记录时出错:', error);
+              saveSuccess = false;
+            }
+
+            // 更新抽奖次数（无论保存是否成功都要更新）
+            todayDrawCount++;
+            const remaining = MAX_DAILY_DRAWS - todayDrawCount;
+            const remainingCountEl = document.getElementById('remainingCount');
+            const drawInfoEl = document.getElementById('drawInfo');
+
+            if (remainingCountEl) {
+              remainingCountEl.textContent = remaining;
+            }
+
+            if (drawInfoEl) {
+              drawInfoEl.textContent = `今日剩余抽奖次数: ${remaining} 次`;
+            }
+
+            if (drawButton) {
+              drawButton.disabled = remaining <= 0;
+              drawButton.textContent = '抽奖';
+            }
+
+            // 重新加载记录（无论保存是否成功都尝试加载）
+            try {
+              await loadRecords('my');
+            } catch (error) {
+              console.error('加载记录时出错:', error);
+            }
+
+            // 显示中奖提示
+            setTimeout(() => {
+              if (!saveSuccess) {
+                alert(`抽中：${prize.name}，保存失败，请将此提示截屏联系管理员并稍后重试`);
+              }
+              prizeItems.forEach(item => item.classList.remove('highlight'));
+            }, 500);
+          } catch (error) {
+            console.error('抽奖过程中出错:', error);
+            console.error('错误详情:', error.message, error.stack);
+            // 确保按钮状态恢复
+            if (drawButton) {
+              drawButton.disabled = false;
+              drawButton.textContent = '抽奖';
+            }
+            const remainingCountEl = document.getElementById('remainingCount');
+            const drawInfoEl = document.getElementById('drawInfo');
+            const remaining = MAX_DAILY_DRAWS - todayDrawCount;
+
+            if (remainingCountEl) {
+              remainingCountEl.textContent = remaining;
+            }
+            if (drawInfoEl) {
+              drawInfoEl.textContent = `今日剩余抽奖次数: ${remaining} 次`;
+            }
+            prizeItems.forEach(item => item.classList.remove('highlight'));
+            alert('抽奖过程中出现错误：' + (error.message || '未知错误'));
+          }
+        }, 800);
+      }
+    }
+
+    // 根据概率计算奖项
+    function calculatePrize() {
+      const random = Math.random();
+      let cumulativeProbability = 0;
+
+      for (const prize of PRIZES) {
+        cumulativeProbability += prize.probability;
+        if (random <= cumulativeProbability) {
+          return prize;
+        }
+      }
+
+      // 如果所有概率都没匹配到，返回最后一个（谢谢参与）
+      return PRIZES[PRIZES.length - 1];
+    }
+
+    // 保存抽奖记录
+    async function saveDrawRecord(prizeName) {
+      if (isDeveloperMode) {
+        // 开发者模式：保存到本地存储
+        try {
+          const record = {
+            username: currentUsername,
+            prize: prizeName,
+            drawDate: getTodayString(),
+            drawTime: new Date().toISOString(),
+            isDeveloper: true
+          };
+
+          // 获取现有的本地记录
+          const localRecords = JSON.parse(localStorage.getItem('developerRecords') || '[]');
+          localRecords.push(record);
+
+          // 保存到本地存储（最多保留1000条记录）
+          if (localRecords.length > 1000) {
+            localRecords.shift();
+          }
+          localStorage.setItem('developerRecords', JSON.stringify(localRecords));
+
+          console.log('开发者记录保存到本地成功');
+          return true;
+        } catch (error) {
+          console.error('保存本地记录失败:', error);
+          return false;
+        }
+      } else {
+        // 用户模式：保存到 LeanCloud
+        try {
+          const DrawRecord = AV.Object.extend('DrawRecord');
+          const record = new DrawRecord();
+
+          record.set('username', currentUsername);
+          record.set('prize', prizeName);
+          record.set('drawDate', getTodayString());
+          record.set('drawTime', new Date());
+          record.set('isDeveloper', false);
+
+          await record.save();
+          console.log('记录保存成功');
+          return true;
+        } catch (error) {
+          console.error('保存记录失败:', error);
+
+          // 更详细的错误信息
+          let errorMsg = '保存记录失败：';
+          if (error.code === 1) {
+            errorMsg += '网络连接失败，请检查网络';
+          } else if (error.code === 403) {
+            errorMsg += '权限不足，请检查LeanCloud数据表权限设置';
+          } else if (error.code === 400) {
+            errorMsg += '请求参数错误，请检查配置';
+          } else if (error.message) {
+            errorMsg += error.message;
+          } else {
+            errorMsg += '未知错误，请检查控制台';
+          }
+
+          alert(errorMsg);
+          return false;
+        }
+      }
+    }
+
+    // 切换选项卡
+    function switchTab(tab) {
+      // 更新选项卡样式
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // 显示对应的记录列表
+      if (tab === 'my') {
+        document.getElementById('myRecords').classList.remove('hidden');
+        document.getElementById('allRecords').classList.add('hidden');
+        loadRecords('my');
+      } else {
+        document.getElementById('myRecords').classList.add('hidden');
+        document.getElementById('allRecords').classList.remove('hidden');
+        loadRecords('all');
+      }
+    }
+
+    // 加载记录
+    async function loadRecords(type) {
+      const container = type === 'my' ? document.getElementById('myRecords') : document.getElementById('allRecords');
+      container.innerHTML = '<div class="loading">加载中...</div>';
+
+      try {
+        let allRecords = [];
+
+        if (type === 'my') {
+          // 我的记录：显示当前用户的所有记录
+          // 1. 加载LeanCloud中的用户记录
+          try {
+            const DrawRecord = AV.Object.extend('DrawRecord');
+            const query = new AV.Query(DrawRecord);
+            query.equalTo('username', currentUsername);
+            query.notEqualTo('isDeveloper', true); // 不加载旧的开发者记录（如果有）
+            query.descending('drawTime');
+            query.limit(100);
+            const cloudResults = await query.find();
+
+            cloudResults.forEach(result => {
+              allRecords.push({
+                prize: result.get('prize'),
+                drawTime: result.get('drawTime'),
+                username: result.get('username'),
+                isDeveloper: false
+              });
+            });
+          } catch (error) {
+            console.error('加载LeanCloud记录失败:', error);
+          }
+
+          // 2. 只有在开发者模式下才加载本地存储的开发者记录
+          if (isDeveloperMode) {
+            const localRecords = JSON.parse(localStorage.getItem('developerRecords') || '[]');
+            localRecords.forEach(record => {
+              if (record.username === currentUsername) {
+                allRecords.push({
+                  prize: record.prize,
+                  drawTime: new Date(record.drawTime),
+                  username: record.username,
+                  isDeveloper: true
+                });
+              }
+            });
+          }
+        } else {
+          // 他人记录：只显示LeanCloud中的非开发者记录
+          const DrawRecord = AV.Object.extend('DrawRecord');
+          const query = new AV.Query(DrawRecord);
+          query.notEqualTo('isDeveloper', true);
+          query.descending('drawTime');
+          query.limit(100);
+          const results = await query.find();
+
+          results.forEach(result => {
+            allRecords.push({
+              prize: result.get('prize'),
+              drawTime: result.get('drawTime'),
+              username: result.get('username'),
+              isDeveloper: false
+            });
+          });
+        }
+
+        // 按时间排序（最新的在前）
+        allRecords.sort((a, b) => {
+          const timeA = a.drawTime instanceof Date ? a.drawTime : new Date(a.drawTime);
+          const timeB = b.drawTime instanceof Date ? b.drawTime : new Date(b.drawTime);
+          return timeB - timeA;
+        });
+
+        // 限制显示数量
+        allRecords = allRecords.slice(0, 100);
+
+        if (allRecords.length === 0) {
+          container.innerHTML = '<div class="empty-records">暂无记录</div>';
+          return;
+        }
+
+        container.innerHTML = '';
+        allRecords.forEach(record => {
+          const recordItem = document.createElement('div');
+          recordItem.className = 'record-item';
+
+          const prize = record.prize;
+          const drawTime = record.drawTime instanceof Date ? record.drawTime : new Date(record.drawTime);
+          const username = record.username;
+          const isDev = record.isDeveloper || false;
+
+          const timeStr = formatDateTime(drawTime);
+
+          let html = `<div class="record-header">`;
+
+          // 他人记录：用户名在最前面
+          if (type === 'all') {
+            html += `<div class="username">${username}</div>`;
+          }
+
+          html += `<div class="time">${timeStr}</div>`;
+          html += `<div class="prize">${prize}`;
+          if (isDev && type === 'my') {
+            html += ' <span style="color: #999; font-size: 12px;">(开发者-本地)</span>';
+          }
+          html += `</div>`;
+          html += `</div>`;
+
+          recordItem.innerHTML = html;
+          container.appendChild(recordItem);
+        });
+      } catch (error) {
+        console.error('加载记录失败:', error);
+        let errorMsg = '加载失败：';
+        if (error.code === 1) {
+          errorMsg += '网络连接失败';
+        } else if (error.code === 403) {
+          errorMsg += '权限不足，请检查数据表权限';
+        } else if (error.message) {
+          errorMsg += error.message;
+        } else {
+          errorMsg += '未知错误';
+        }
+        container.innerHTML = `<div class="empty-records">${errorMsg}<br>请刷新重试</div>`;
+      }
+    }
+
+    // 切换下拉菜单
+    function toggleDropdown() {
+      const dropdown = document.getElementById('dropdownMenu');
+      dropdown.classList.toggle('show');
+    }
+
+    // 点击外部关闭下拉菜单
+    document.addEventListener('click', function (event) {
+      const userInfo = document.querySelector('.user-info');
+      const dropdown = document.getElementById('dropdownMenu');
+      if (userInfo && dropdown && !userInfo.contains(event.target) && !dropdown.contains(event.target)) {
+        dropdown.classList.remove('show');
+      }
+    });
+
+    // 打开开发者模式密码输入
+    function openDeveloperMode() {
+      document.getElementById('dropdownMenu').classList.remove('show');
+      document.getElementById('passwordModal').classList.add('show');
+      document.getElementById('passwordInput').focus();
+    }
+
+    // 关闭密码输入弹窗
+    function closePasswordModal() {
+      document.getElementById('passwordModal').classList.remove('show');
+      document.getElementById('passwordInput').value = '';
+    }
+
+    // 显示概率弹窗
+    function showProbabilityModal() {
+      const modal = document.getElementById('probabilityModal');
+      const list = document.getElementById('probabilityList');
+
+      // 清空列表
+      list.innerHTML = '';
+
+      // 遍历奖品并显示概率
+      PRIZES.forEach(prize => {
+        const item = document.createElement('div');
+        item.className = 'probability-item';
+
+        // 使用 displayProbability 字段显示（如果存在），否则使用实际概率
+        const displayText = prize.displayProbability || ((prize.probability * 100).toFixed(8) + '%');
+
+        item.innerHTML = `
+          <span class="prize-name">${prize.name}</span>
+          <span class="prize-probability">${displayText}</span>
+        `;
+
+        list.appendChild(item);
+      });
+
+      modal.classList.add('show');
+    }
+
+    // 关闭概率弹窗
+    function closeProbabilityModal() {
+      document.getElementById('probabilityModal').classList.remove('show');
+    }
+
+    // 验证密码并进入开发者模式
+    function checkPassword() {
+      const password = document.getElementById('passwordInput').value.trim();
+      if (password === DEVELOPER_PASSWORD) {
+        isDeveloperMode = true;
+        localStorage.setItem('isDeveloperMode', 'true');
+        closePasswordModal();
+        // 刷新页面以更新所有状态
+        location.reload();
+      } else {
+        alert('密码错误！');
+        document.getElementById('passwordInput').value = '';
+      }
+    }
+
+    // 退出开发者模式
+    function exitDeveloperMode() {
+      isDeveloperMode = false;
+      localStorage.removeItem('isDeveloperMode');
+      document.getElementById('dropdownMenu').classList.remove('show');
+      // 刷新页面以更新所有状态
+      location.reload();
+    }
+
+  </script>
+</body>
+
+</html>
