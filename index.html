@@ -194,7 +194,7 @@
     /* 记录选项卡 */
     .tabs {
       display: flex;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
       border-bottom: 2px solid #eee;
     }
 
@@ -219,13 +219,13 @@
 
     /* 记录列表 */
     .records-section {
-      max-height: 450px;
+      max-height: 480px;
       overflow-y: auto;
     }
 
     /* 留言 */
     .message-panel {
-      height: 450px;
+      height: 480px;
       display: flex;
       flex-direction: column;
       border: 1px solid #eee;
@@ -301,6 +301,35 @@
       word-break: break-word;
     }
 
+    /* 留言风险提示滚动条 */
+    .message-ticker {
+      border-top: 1px solid #eee;
+      background: #fff7e6;
+      color: #8a5a00;
+      font-size: 12px;
+      line-height: 24px;
+      height: 24px;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 0 12px;
+    }
+
+    .message-ticker-track {
+      display: inline-block;
+      padding-left: 100%;
+      animation: messageTickerScroll 18s linear infinite;
+      will-change: transform;
+    }
+
+    .message-ticker:hover .message-ticker-track {
+      animation-play-state: paused;
+    }
+
+    @keyframes messageTickerScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
     .message-composer {
       display: flex;
       gap: 10px;
@@ -336,7 +365,7 @@
     }
 
     .record-item {
-      padding: 12px;
+      padding: 8px 12px;
       margin-bottom: 10px;
       background: #f9f9f9;
       border-radius: 4px;
@@ -390,7 +419,7 @@
       left: 0;
       right: 0;
       text-align: center;
-      padding: 15px 20px;
+      padding: 5px 20px;
       background: white;
       border-top: 1px solid #e0e0e0;
       z-index: 999;
@@ -700,7 +729,7 @@
     <div id="mainSection" class="hidden">
       <!-- 导航栏 -->
       <div class="navbar">
-        <div class="title">抽奖</div>
+        <div class="title">小稳神抽奖</div>
         <div class="user-info" onclick="toggleDropdown()">
           <span class="username" id="displayUsername"></span>
           <span class="switch-btn">切换</span>
@@ -790,6 +819,11 @@
       <div id="messagePanel" class="message-panel hidden">
         <div id="messageList" class="message-list">
           <div class="loading">加载中...</div>
+        </div>
+        <div class="message-ticker" title="提示：鼠标悬停可暂停滚动">
+          <div class="message-ticker-track">
+            严禁发布违法违规、涉黄涉赌、暴力辱骂及任何不当言论；请文明发言，违者将删除内容并封禁账号，必要时配合相关部门处理。
+          </div>
         </div>
         <div class="message-composer">
           <input id="messageInput" class="message-input" type="text" placeholder="请输入留言…" maxlength="200" />
@@ -1309,6 +1343,7 @@
         if (recordsPanel) recordsPanel.classList.add('hidden');
         if (messagePanel) messagePanel.classList.remove('hidden');
         loadMessages();
+        startMessageCooldownCountdown();
         return;
       }
 
@@ -1377,10 +1412,64 @@
       }
     }
 
+    // 留言发送频率控制（每个用户 120 秒一次）
+    const MESSAGE_COOLDOWN_SECONDS = 120;
+    let messageCooldownTimer = null;
+
+    function getMessageCooldownKey() {
+      return `message_last_sent_at_v1::${currentUsername || ''}`;
+    }
+
+    function getRemainingMessageCooldownSeconds() {
+      if (!currentUsername) return 0;
+      const key = getMessageCooldownKey();
+      const last = Number(localStorage.getItem(key) || '0');
+      if (!last) return 0;
+      const elapsedMs = Date.now() - last;
+      const remainingMs = MESSAGE_COOLDOWN_SECONDS * 1000 - elapsedMs;
+      return Math.max(0, Math.ceil(remainingMs / 1000));
+    }
+
+    function updateMessageSendButtonState() {
+      const btn = document.getElementById('messageSendBtn');
+      if (!btn) return;
+      const remaining = getRemainingMessageCooldownSeconds();
+      if (remaining > 0) {
+        btn.disabled = true;
+        btn.textContent = `${remaining}s 后可发送`;
+      } else {
+        btn.disabled = false;
+        btn.textContent = '发送';
+      }
+    }
+
+    function startMessageCooldownCountdown() {
+      if (messageCooldownTimer) {
+        clearInterval(messageCooldownTimer);
+        messageCooldownTimer = null;
+      }
+      updateMessageSendButtonState();
+      messageCooldownTimer = setInterval(() => {
+        const remaining = getRemainingMessageCooldownSeconds();
+        updateMessageSendButtonState();
+        if (remaining <= 0) {
+          clearInterval(messageCooldownTimer);
+          messageCooldownTimer = null;
+        }
+      }, 500);
+    }
+
     async function sendMessage() {
       const input = document.getElementById('messageInput');
       const btn = document.getElementById('messageSendBtn');
       if (!input || !btn) return;
+
+      // 冷却中不允许发送
+      const remaining = getRemainingMessageCooldownSeconds();
+      if (remaining > 0) {
+        startMessageCooldownCountdown();
+        return;
+      }
 
       const content = (input.value || '').trim();
       if (!content) return;
@@ -1397,12 +1486,16 @@
 
         input.value = '';
         await loadMessages();
+
+        // 记录本次发送时间并开始倒计时
+        localStorage.setItem(getMessageCooldownKey(), String(Date.now()));
+        startMessageCooldownCountdown();
       } catch (error) {
         console.error('发送留言失败:', error);
         alert('发送失败，请检查网络或权限设置');
       } finally {
-        btn.disabled = false;
-        btn.textContent = '发送';
+        // 如果进入冷却则保持禁用并显示倒计时，否则恢复发送
+        updateMessageSendButtonState();
       }
     }
 
