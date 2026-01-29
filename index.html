@@ -390,7 +390,11 @@
       margin-bottom: 10px;
       background: #f9f9f9;
       border-radius: 4px;
-      border-left: 3px solid #667eea;
+      border-left: 3px solid #bdbdbd; /* 默认：非当天灰色 */
+    }
+
+    .record-item.is-today {
+      border-left-color: #667eea; /* 当天：蓝色 */
     }
 
     .record-item .record-header {
@@ -409,8 +413,12 @@
     .record-item .prize {
       font-size: 14px;
       font-weight: bold;
-      color: #667eea;
+      color: #9e9e9e; /* 默认：非当天灰色 */
       flex: 1;
+    }
+
+    .record-item.is-today .prize {
+      color: #667eea; /* 当天：蓝色 */
     }
 
     .record-item .username {
@@ -1177,6 +1185,15 @@
       return `${year}-${month}-${day}`;
     }
 
+    // 获取指定日期的日期字符串（YYYY-MM-DD，本地时区）
+    function getDateStringFromDate(date) {
+      const d = date instanceof Date ? date : new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     // 格式化时间（年-月-日 时:分:秒）
     function formatDateTime(date) {
       const year = date.getFullYear();
@@ -1745,6 +1762,10 @@
           const drawTime = record.drawTime instanceof Date ? record.drawTime : new Date(record.drawTime);
           const username = record.username;
           const isDev = record.isDeveloper || false;
+
+          // 当天 vs 历史：决定颜色（我的记录/他人记录都一致）
+          const isToday = getDateStringFromDate(drawTime) === getTodayString();
+          recordItem.classList.add(isToday ? 'is-today' : 'is-old');
 
           const timeStr = formatDateTime(drawTime);
 
