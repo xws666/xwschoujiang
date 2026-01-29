@@ -817,8 +817,8 @@
           <div class="prize-item">100元</div>
           <div class="prize-item">25元</div>
           <div class="prize-item">10元</div>
-          <div class="prize-item">5.2元</div>
           <div class="prize-item">1元</div>
+          <div class="prize-item">0.52元</div>
           <div class="prize-item">0.1元</div>
           <div class="prize-item">0.01元</div>
           <div class="prize-item">谢谢参与</div>
@@ -869,7 +869,7 @@
 
   <!-- 版权信息 -->
   <div class="footer">
-    <div class="copyright">任何问题联系小稳神 3253952854@qq.com</div>
+    <div class="copyright">Beta-v1.0.2 | 问题反馈 3253952854@qq.com</div>
   </div>
 
   <!-- LeanCloud SDK -->
@@ -907,11 +907,11 @@
       { name: '100元', probability: 0.0000000008 / 100, displayProbability: "0.008%" },
       { name: '52元', probability: 0.00000008 / 100, displayProbability: "0.08%" },
       { name: '10元', probability: 0.008 / 100, displayProbability: "0.1%" },
-      { name: '5.2元', probability: 0.08 / 100, displayProbability: "0.8%" },
-      { name: '1元', probability: 1 / 100, displayProbability: "1.8%" },
-      { name: '0.1元', probability: 8.8 / 100, displayProbability: "8.8%" },
+      { name: '1元', probability: 0.8 / 100, displayProbability: "1.8%" },
+      { name: '0.52元', probability: 2.8 / 100, displayProbability: "2.8%" },
+      { name: '0.1元', probability: 18.8 / 100, displayProbability: "18.8%" },
       { name: '0.01元', probability: 38 / 100, displayProbability: "38%" },
-      { name: '谢谢参与', probability: 50.41 / 100, displayProbability: "50.41%" }
+      { name: '谢谢参与', probability: 38.8 / 100, displayProbability: "38.8%" }
     ];
 
 
@@ -1250,13 +1250,19 @@
       } else {
         // 用户模式：有动画，时间缩短
         let currentIndex = 0;
+        // 动画参数：根据奖项数量动态计算，确保能跑到最后一项（例如 0.01 元不会被跳过）
+        const animationStepMs = 80; // 每步间隔（越小越快）
+        const animationDurationMs = Math.max(
+          520,
+          prizeItems.length * animationStepMs + 80 // 至少完整走一圈 + 少量缓冲
+        );
         const animationInterval = setInterval(() => {
           prizeItems.forEach(item => item.classList.remove('highlight'));
           prizeItems[currentIndex].classList.add('highlight');
           currentIndex = (currentIndex + 1) % prizeItems.length;
-        }, 100);
+        }, animationStepMs);
 
-        // 0.8秒后停止动画并确定奖项
+        // 动画结束后停止并确定奖项
         setTimeout(async () => {
           clearInterval(animationInterval);
 
