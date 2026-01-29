@@ -511,6 +511,44 @@
       background: #e0e0e0;
     }
 
+    /* 顶部通知/公告滚动条（紧贴导航栏下方，固定在页面顶部） */
+    .site-ticker {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      background: #eaf2ff;
+      color: #1b4b8a;
+      font-size: 13px;
+      line-height: 28px;
+      height: 28px;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 0 12px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .site-ticker-track {
+      display: inline-block;
+      padding-left: 100%;
+      animation: siteTickerScroll 16s linear infinite;
+      will-change: transform;
+    }
+
+    .site-ticker:hover .site-ticker-track {
+      animation-play-state: paused;
+    }
+
+    @keyframes siteTickerScroll {
+      0% {
+        transform: translateX(0);
+      }
+
+      100% {
+        transform: translateX(-100%);
+      }
+    }
+
     /* 下拉弹窗 */
     .dropdown-menu {
       position: absolute;
@@ -774,6 +812,11 @@
           <div id="developerMenuItem" class="menu-item" onclick="openDeveloperMode()">开发者人员模式</div>
           <div id="exitDeveloperMenuItem" class="menu-item hidden" onclick="exitDeveloperMode()">返回用户</div>
         </div>
+      </div>
+
+      <!-- 顶部公告滚动条（可后续改为通知/公告） -->
+      <div class="site-ticker" title="提示：鼠标悬停可暂停滚动" role="status" aria-live="polite">
+        <div class="site-ticker-track" id="siteTickerText">恭喜王家斌w成为本站第一位“五连全中”的用户！</div>
       </div>
 
       <!-- 密码输入弹窗 -->
@@ -1125,8 +1168,8 @@
       document.getElementById('usernameSection').classList.add('hidden');
       document.getElementById('mainSection').classList.remove('hidden');
       updateNavbarDisplay();
-      // 添加导航栏的顶部间距
-      document.getElementById('mainSection').style.paddingTop = '60px';
+      // 为导航栏 + 顶部公告条预留顶部间距
+      document.getElementById('mainSection').style.paddingTop = '90px';
     }
 
     // 更新导航栏显示
