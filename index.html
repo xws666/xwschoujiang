@@ -891,6 +891,8 @@
     const MAX_DAILY_DRAWS = 5;
     let isDeveloperMode = false;
     const DEVELOPER_PASSWORD = '475397';
+    let currentDateString = ''; // 用于检测跨天
+    let dateCheckInterval = null; // 跨天检测定时器
 
     const PRIZES = [
       { name: '520元', probability: 0.00000000000008 / 100, displayProbability: "0.0008%" },
@@ -905,6 +907,35 @@
     ];
 
 
+    // 检测是否跨天，如果跨天则重置抽奖次数
+    function checkDateChange() {
+      const today = getTodayString();
+      if (currentDateString && currentDateString !== today) {
+        // 跨天了，重置抽奖次数
+        console.log('检测到跨天，重置抽奖次数');
+        todayDrawCount = 0;
+        currentDateString = today;
+        if (!isDeveloperMode) {
+          loadTodayDrawCount();
+        }
+      } else if (!currentDateString) {
+        // 首次设置
+        currentDateString = today;
+      }
+    }
+
+    // 启动跨天检测定时器（每分钟检查一次）
+    function startDateCheckTimer() {
+      // 清除已有定时器
+      if (dateCheckInterval) {
+        clearInterval(dateCheckInterval);
+      }
+      // 立即检查一次
+      checkDateChange();
+      // 每分钟检查一次
+      dateCheckInterval = setInterval(checkDateChange, 60000); // 60000ms = 1分钟
+    }
+
     // 页面加载时检查用户名和开发者模式
     window.onload = function () {
       maybeShowNotice();
@@ -917,10 +948,21 @@
           isDeveloperMode = true;
         }
         showMainSection();
+        // 初始化日期并启动跨天检测
+        currentDateString = getTodayString();
+        startDateCheckTimer();
         loadTodayDrawCount();
         loadRecords('my');
       }
     };
+
+    // 页面可见性变化时检测跨天（用户从其他标签页切回来时）
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && currentUsername) {
+        // 页面变为可见时，立即检查是否跨天
+        checkDateChange();
+      }
+    });
 
     // ============================
     // 水印配置（可通过代码自由修改）
@@ -1105,6 +1147,9 @@
           return;
         }
 
+        // 先检查是否跨天
+        checkDateChange();
+
         const today = getTodayString();
         const DrawRecord = AV.Object.extend('DrawRecord');
         const query = new AV.Query(DrawRecord);
@@ -1123,10 +1168,13 @@
       }
     }
 
-    // 获取今天的日期字符串（YYYY-MM-DD）
+    // 获取今天的日期字符串（YYYY-MM-DD，使用本地时区）
     function getTodayString() {
       const today = new Date();
-      return today.toISOString().split('T')[0];
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     }
 
     // 格式化时间（年-月-日 时:分:秒）
